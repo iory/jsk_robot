@@ -1,0 +1,2 @@
+TrajectoryPlannerROS:
+  escape_vel: -0.1  # -0.1

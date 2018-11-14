@@ -1,0 +1,4 @@
+inflater:
+  inflation_radius: 0.30  # 0.7
+  cost_scaling_factor: 100.0  # 25.0 default 10, increasing factor decrease the cost value
+update_frequency: 10.0  # default 5 (http://wiki.ros.org/navigation/Tutorials/Navigation%20Tuning%20Guide)
