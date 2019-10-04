@@ -140,7 +140,7 @@
   <node if="$(arg launch_reset_motors)"
         name="pr2_reset_motors" pkg="jsk_pr2_startup" type="pr2_reset_motors.py"/>
 
-  <node pkg="jsk_robot_startup" type="finish_launch_sound.py"
-        machine="c2"
-        name="finish_launch_sound" />
+  <node name="finish_launch_sound"
+        pkg="jsk_pr2_startup" type="boot_sound.py"
+        machine="c1" />
 </launch>
