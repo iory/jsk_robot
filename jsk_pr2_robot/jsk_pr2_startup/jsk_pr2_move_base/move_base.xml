@@ -2,13 +2,14 @@
 <launch>
   <arg name="use_teb_local_planner" default="false" />
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
+  <arg name="machine" default="$(arg machine)" />
 
   <!-- Bring up the tilt_laser aware version of move_base -->
   <node pkg="pr2_move_base" name="pr2_move_base_node" type="pr2_move_base.py"
-        respawn="true" machine="c2" />
+        respawn="true" machine="$(arg machine)" />
 
   <node pkg="move_base" type="move_base" name="move_base_node"
-        machine="c2" clear_params="true" output="screen" respawn="true">
+        machine="$(arg machine)" clear_params="true" output="screen" respawn="true">
     <!-- launch-prefix="nice -n +10"> -->
     <remap from="odom" to="base_odometry/odom" />
     <remap from="cmd_vel" to="navigation/cmd_vel/raw" />

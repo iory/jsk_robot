@@ -3,7 +3,8 @@
         name="start_launch_sound" />
   <arg name="map_frame" default="eng2" />
   <arg name="launch_map" default="true" />
-  <arg name="launch_kinect" default="true" />
+  <arg name="launch_kinect" default="false" />
+  <arg name="launch_kinect2" default="true" />
   <arg name="launch_move_base" default="true" />
   <arg name="launch_moveit" default="false" />
   <arg name="launch_imagesift" default="false" />
@@ -18,15 +19,14 @@
   <arg name="launch_teleoperation" default="false" />
   <arg name="launch_people_detection" default="false" />
   <arg name="launch_look_forward" default="true" />
-  <arg name="launch_twitter" default="true" />
+  <arg name="launch_twitter" default="false" />
   <arg name="launch_visualize_log" default="false" />
   <arg name="launch_reset_motors" default="true" />
   <arg name="slow_camera_framerate" default="true" />
   <arg name="launch_c3_startup" default="false" />
   <arg name="USER_NAME" default="false" />
 
-  <include file="$(find jsk_pr2_startup)/jsk_pr2.machine"
-           if="$(arg launch_c3_startup)" />
+  <include file="$(find jsk_pr2_startup)/jsk_pr2.machine" />
   <include file="$(find pr2_machine)/$(env ROBOT).machine"
            unless="$(arg launch_c3_startup)" />
   <param name="/active_user/launch_user_name" value="$(arg USER_NAME)"/>
@@ -35,6 +35,7 @@
   <include if="$(arg launch_move_base)"
            file="$(find jsk_pr2_startup)/jsk_pr2_move_base/pr2_2dnav.launch">
     <arg name="launch_look_forward" value="$(arg launch_look_forward)"/>
+    <arg name="machine" value="c1" />
   </include>
 
   <!-- special start: use when launuch_move_base is false-->
@@ -42,6 +43,7 @@
            file="$(find jsk_pr2_startup)/jsk_pr2_move_base/pr2_2dnav.launch">
     <arg name="launch_teleop_joystick" value="true" />
     <arg name="launch_navigation" value="false" />
+    <arg name="machine" default="c1" />
   </include>
 
   <!-- We do not launch dynamic_tf_publisher for default anymore.
@@ -50,12 +52,18 @@
 
   <include file="$(find jsk_maps)/launch/start_map_$(arg map_frame).launch"
            if="$(arg launch_map)">
-    <arg name="MACHINE" value="c2" />
+    <arg name="MACHINE" value="c1" />
   </include>
 
   <!-- kinect node -->
   <include if="$(arg launch_kinect)"
            file="$(find jsk_pr2_startup)/jsk_pr2_sensors/kinect_head.launch" />
+
+  <!-- kinect v2 node -->
+  <include if="$(arg launch_kinect2)"
+           file="$(find jsk_pr2_startup)/jsk_pr2_sensors/kinect2_head.launch" >
+    <arg name="machine" value="c3" />
+  </include>
 
   <!-- logging node for PR2  -->
   <include if="$(arg launch_db)"
@@ -63,6 +71,7 @@
     <arg name="map_frame" value="$(arg map_frame)" />
     <arg name="twitter" value="$(arg launch_twitter)"/>
     <arg name="visualize_log" value="$(arg launch_visualize_log)"/>
+    <arg name="machine" default="c1" />
   </include>
 
   <!-- pr2 warning -->
@@ -104,7 +113,7 @@
   <include if="$(arg launch_jsk_pcl)"
            file="$(find jsk_pcl_ros)/launch/pointcloud_screenpoint.launch" >
     <arg name="image" value="/kinect_head/rgb" />
-    <arg name="cloud_machine" value="c2" />
+    <arg name="cloud_machine" value="c1" />
     <arg name="camera_info" value="camera_info_input_mux"/>
     <arg name="points" value="points_input_mux"/>
   </include>
@@ -116,13 +125,15 @@
            file="$(find jsk_pr2_startup)/jsk_pr2_lifelog/pr2_microphone.launch"/>
 
   <!-- joy mux -->
-  <node machine="c2" pkg="topic_tools" type="mux" name="multiple_joystick_mux"
+  <node machine="c1" pkg="topic_tools" type="mux" name="multiple_joystick_mux"
         respawn="true" args="/joy /joy_org /joy_other" >
     <remap from="mux" to="multiple_joystick_mux"/>
   </node>
 
   <include if="$(arg launch_teleoperation)"
-           file="$(find jsk_pr2_startup)/jsk_pr2_sensors/pr2_teleop_robot.launch" />
+           file="$(find jsk_pr2_startup)/jsk_pr2_sensors/pr2_teleop_robot.launch" >
+    <arg name="machine" value="c1" />
+  </include>
   <include if="$(arg slow_camera_framerate)"
            file="$(find jsk_pr2_startup)/jsk_pr2_sensors/camera_framerate.launch" />
 

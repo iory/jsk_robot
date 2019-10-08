@@ -19,7 +19,7 @@
     <arg name="enable_monitor" value="false" />
     <arg name="log_rate" value="1.0" />
     <arg name="localhost" value="false" />
-    <arg name="machine" value="c2" />
+    <arg name="machine" value="$(arg machine)" />
     <arg name="launch_manager" value="false" />
     <arg name="manager" value="kinect_head/kinect_head_c2_nodelet_manager" />
     <arg name="map_frame_id" value="$(arg map_frame)" />

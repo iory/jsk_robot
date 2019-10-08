@@ -1,5 +1,8 @@
 <launch>
-  <arg name="launch_stereo_camera" default="true" />
+  <include file="$(find pr2_machine)/pr2.machine" />
+
+  <arg name="launch_stereo_camera" default="false" />
+  <arg name="launch_arm_camera" default="false" />
   <arg name="launch_runtime_logger" default="false" />
   <arg name="launch_hd_monitor" default="true" />
   <arg name="launch_ntp_monitor" default="false"/>
@@ -7,9 +10,10 @@
   <arg name="launch_network_detector" default="false" />
   <arg name="launch_sound_play" default="true"/>
   <arg name="launch_app_manager" default="true" />
+  <arg name="use_c2" default="false" />
+  <arg name="machine" default="c1" />
 
   <param name="/use_sim_time" value="false"/>
-  <include file="$(find pr2_machine)/pr2.machine" />
 
   <!-- Remap diagnostics if we are pushed into a namespace. -->
   <remap from="/diagnostics" to="/$(optenv ROS_NAMESPACE /)/diagnostics" />
@@ -29,7 +33,9 @@
   <include file="$(find pr2_controller_manager)/controller_manager.launch" />
 
   <!-- PS3 joystick for A2 servers -->
-  <node machine="c2" pkg="joy" type="joy_node" name="joy_node" >
+  <node machine="$(arg machine)"
+        name="joy_node"
+        pkg="joy" type="joy_node" >
     <remap from="joy" to="joy_org" />
     <param name="deadzone" value="0.12" />
     <param name="dev" value="/etc/ros/sensors/ps3joy" />
@@ -43,7 +49,10 @@
   <node name="power_board" pkg="pr2_power_board" type="power_node2" args="--address=10.68.0.50" respawn="true"/>
 
   <!-- Battery Monitor -->
-  <node machine="c2" pkg="ocean_battery_driver" type="ocean_server"  name="ocean_server" respawn="true">
+  <node machine="$(arg machine)"
+        name="ocean_server"
+        pkg="ocean_battery_driver" type="ocean_server"
+        respawn="true">
     <param name="number_of_ports" type="int" value="4" />
     <param name="port0" type="string" value="/etc/ros/sensors/battery0" />
     <param name="port1" type="string" value="/etc/ros/sensors/battery1" />
@@ -51,10 +60,19 @@
     <param name="port3" type="string" value="/etc/ros/sensors/battery3" />
     <param name="debug_level" type="int" value="0" />
   </node>
-  <node pkg="power_monitor" type="power_monitor"  name="power_monitor" respawn="true"/>
-  
+  <node name="power_monitor"
+        pkg="power_monitor" type="power_monitor"
+        respawn="true" >
+    <rosparam>
+      frequency: 1.0
+    </rosparam>
+  </node>
+
   <!-- Base Laser -->
-  <node machine="c2" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
+  <node machine="$(arg machine)"
+        name="base_hokuyo_node"
+        pkg="hokuyo_node" type="hokuyo_node"
+        args="scan:=base_scan">
     <param name="port" type="string" value="/etc/ros/sensors/base_hokuyo" />
     <param name="frame_id" type="string" value="base_laser_link" />
     <param name="min_ang" type="double" value="-2.2689" />
@@ -64,7 +82,10 @@
   </node>
 
   <!-- Tilt Laser -->
-  <node  machine="c2" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+  <node  machine="$(arg machine)"
+         name="tilt_hokuyo_node"
+         pkg="hokuyo_node" type="hokuyo_node"
+         args="scan:=tilt_scan">
     <param name="port" type="string" value="/etc/ros/sensors/tilt_hokuyo" />
     <param name="frame_id" type="string" value="laser_tilt_link" />
     <param name="min_ang" type="double" value="-0.829" />
@@ -89,15 +110,25 @@
 
   <!-- Prosilica camera -->
   <!-- Camera isn't robust to dropped links, so it should respawn -->
-  <arg name="no-prosilica" default="false" />
-  <group unless="$(arg no-prosilica)" >
-    <node name="prosilica_driver" pkg="prosilica_camera"
-          type="prosilica_node" respawn="true" output="screen">
-      <remap from="camera" to="prosilica" />
+  <group ns="prosilica" >
+    <node name="prosilica_nodelet_manager"
+          pkg="nodelet" type="nodelet"
+          args="manager" />
 
+    <node name="prosilica_driver"
+          pkg="nodelet" type="nodelet"
+          args="load prosilica_camera/driver prosilica_nodelet_manager"
+          respawn="true" output="screen" >
+      <remap from="camera" to="prosilica" />
       <param name="ip_address"   type="str" value="10.68.0.20"/>
-      <param name="trigger_mode" type="str" value="polled"/>
+      <param name="trigger_mode" type="str" value="streaming"/>
       <param name="frame_id"     type="str" value="high_def_optical_frame" />
+    </node>
+
+    <node name="rectify_image"
+          pkg="nodelet" type="nodelet"
+          args="load image_proc/rectify prosilica_nodelet_manager">
+      <remap from="image_mono" to="image_raw" />
     </node>
   </group>
 
@@ -106,13 +137,19 @@
            if="$(arg launch_stereo_camera)"/>
 
   <!-- Forearm Camera -->
-  <include file="$(find pr2_bringup)/config/r_forearm_cam.launch" />
-  <include file="$(find pr2_bringup)/config/l_forearm_cam.launch" />
+  <group if="$(arg launch_arm_camera)" >
+    <include file="$(find pr2_bringup)/config/r_forearm_cam.launch" />
+    <include file="$(find pr2_bringup)/config/l_forearm_cam.launch" />
+  </group>
 
   <!-- Sound -->
   <group if="$(arg launch_sound_play)">
-    <node pkg="sound_play" type="soundplay_node.py" machine="c1" name="sound_play" respawn="true">
+    <node pkg="sound_play" type="soundplay_node.py" machine="c1" name="sound_play" respawn="true"
+          output="screen">
       <remap from="sound_play" to="robotsound" />
+      <rosparam>
+        device: plughw:1,0
+      </rosparam>
     </node>
 
     <!-- japanese speech node -->
@@ -132,13 +169,19 @@
   <!-- NTP monitoring script reports clock sync on diagnostics -->
   <group if="$(arg launch_ntp_monitor)">
     <node pkg="pr2_computer_monitor" name="ntp_c1" type="ntp_monitor.py" args="10.68.255.1 --offset-tolerance 50000 --diag-hostname=c1" machine="c1" />
-    <node pkg="pr2_computer_monitor" name="ntp_c2" type="ntp_monitor.py" args="c1 --diag-hostname=c2" machine="c2"/>
+    <node name="ntp_c2"
+          pkg="pr2_computer_monitor" type="ntp_monitor.py"
+          args="c1 --diag-hostname=c2"
+          machine="c2" if="$(arg use_c2)" />
   </group>
 
   <!-- Disk usage monitoring script monitors HD temperature, usage on diagnostics -->
   <group if="$(arg launch_hd_monitor)">
     <node pkg="pr2_computer_monitor" name="realtime_hd_monitor" type="hd_monitor.py" args="$(optenv HOME /home) --diag-hostname=c1" machine="c1"/>
-    <node pkg="pr2_computer_monitor" name="two_hd_monitor" type="hd_monitor.py" args="--diag-hostname=c2" machine="c2"/>
+    <node name="two_hd_monitor"
+          pkg="pr2_computer_monitor" type="hd_monitor.py"
+          args="--diag-hostname=c2"
+          machine="c2" if="$(arg use_c2)" />
   </group>
 
   <!-- Monitor CPU temp, usage -->
@@ -146,7 +189,11 @@
     <param name="check_core_temps" type="bool" value="false" />
     <param name="enforce_clock_speed" type="bool" value="false" />
   </node>
-  <node pkg="pr2_computer_monitor" name="two_cpu_monitor" type="cpu_monitor.py" args="--diag-hostname=c2" machine="c2" >
+  <node name="two_cpu_monitor"
+        pkg="pr2_computer_monitor" type="cpu_monitor.py"
+        args="--diag-hostname=c2"
+        machine="c2"
+        if="$(arg use_c2)" >
     <param name="check_core_temps" type="bool" value="false" />
     <param name="enforce_clock_speed" type="bool" value="false" />
   </node>
@@ -202,7 +249,7 @@
     <arg name="port" value="27017" />
     <arg name="repl_set_mode" value="false" />
     <arg name="replicator_dump_path" value="/removable/replicator_dumps" /> <!-- use removable hdd on c2 -->
-    <arg name="machine" value="c2" />
+    <arg name="machine" value="$(arg machine)" />
   </include>
 
   <!-- app manager -->
@@ -212,4 +259,5 @@
     <arg name="applist" value="$(find jsk_pr2_startup)/apps"/>
     <arg name="respawn" value="false"/>
   </include>
+
 </launch>

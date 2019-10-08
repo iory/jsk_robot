@@ -3,13 +3,14 @@
   <arg name="use_tilt_laser" default="true"/>
   <arg name="use_base_laser" default="true"/>
   <arg name="gazebo" default="false" />
+  <arg name="machine" default="c2" />
 
   <include file="$(find pr2_machine)/$(env ROBOT).machine"/>
 
   <group if="$(arg use_tilt_laser)">
     <!-- Filter for tilt laser shadowing/veiling -->
     <node pkg="laser_filters" type="scan_to_cloud_filter_chain" name="tilt_shadow_filter"
-          respawn="true" machine="c2" clear_params="true">
+          respawn="true" machine="$(arg machine)" clear_params="true">
       <remap from="scan" to="tilt_scan" />
       <remap from="cloud_filtered" to="tilt_scan_shadow_filtered" />
       <param name="target_frame" value="laser_tilt_link" />
@@ -27,7 +28,7 @@
 
     <!-- Filter for tilt laser scans that hit the body of the robot -->
     <node pkg="robot_self_filter" type="self_filter" name="tilt_laser_self_filter"
-          machine="c2" respawn="true" output="screen">
+          machine="$(arg machine)" respawn="true" output="screen">
       <remap from="cloud_in" to="tilt_scan_shadow_filtered" />
       <remap from="cloud_out" to="tilt_scan_filtered" />
       <rosparam command="load" file="$(find jsk_pr2_startup)/jsk_pr2_sensors/tilt_self_filter.yaml" />
@@ -36,7 +37,7 @@
 
     <node name="tilt_scan_filtered_to_scan"
           pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node"
-          machine="c2" respawn="true" output="screen">
+          machine="$(arg machine)" respawn="true" output="screen">
       <remap from="cloud_in" to="tilt_scan_filtered"/>
       <remap from="scan" to="tilt_scan_filtered/scan"/>
       <rosparam>
@@ -56,13 +57,13 @@
 
   <group if="$(arg use_base_laser)">
     <node pkg="topic_tools" type="throttle" name="base_scan_throttle"
-          args="messages base_scan 1.0 base_scan_throttled" machine="c2">
+          args="messages base_scan 1.0 base_scan_throttled" machine="$(arg machine)">
       <param name="lazy" value="true"/>
     </node>
 
     <!-- Filter for base laser shadowing/veiling -->
     <node pkg="laser_filters" type="scan_to_cloud_filter_chain" name="base_shadow_filter"
-          machine="c2" respawn="true">
+          machine="$(arg machine)" respawn="true">
       <remap from="scan" to="base_scan" />
       <remap from="cloud_filtered" to="base_scan_shadow_filtered" />
       <param name="target_frame" value="base_footprint" />
@@ -73,7 +74,7 @@
 
     <!-- Filter for base laser scans that hit the body of the robot -->
     <node pkg="robot_self_filter" type="self_filter" name="base_laser_self_filter"
-          machine="c2" respawn="true" output="screen">
+          machine="$(arg machine)" respawn="true" output="screen">
       <remap from="cloud_in" to="base_scan_shadow_filtered" />
       <remap from="cloud_out" to="base_scan_filtered" />
       <param name="sensor_frame" type="string" value="base_laser_link" />
@@ -82,7 +83,7 @@
 
     <node name="base_scan_filtered_to_scan"
           pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node"
-          machine="c2" respawn="true" output="screen">
+          machine="$(arg machine)" respawn="true" output="screen">
       <remap from="cloud_in" to="base_scan_filtered"/>
       <remap from="scan" to="base_scan_filtered/scan"/>
       <rosparam>

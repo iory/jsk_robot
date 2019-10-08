@@ -1,4 +1,5 @@
 <launch>
+  <arg name="machine" default="c2" />
   <include file="$(find pr2_machine)/$(env ROBOT).machine" />
 
   <!-- push L1 and R2 to unsafe teleop
@@ -20,19 +21,21 @@
   </node>
 
   <node pkg="topic_tools" type="mux" name="unsafe_vel_mux" respawn="true"
-	args="/navigation/unsafe_vel /input_vel /navigation/cmd_vel /teleop/joy_vel" machine="c2">
+	args="/navigation/unsafe_vel /input_vel /navigation/cmd_vel /teleop/joy_vel" machine="$(arg machine)">
     <remap from="mux" to="vel_type_mux" />
   </node>
   <!-- args is (topic, condition, select)* -->
-  <node pkg="jsk_robot_startup" type="mux_selector.py" machine="c2"
-	name="vel_type_selector" respawn="true" output="screen"
-	args="/joy 'm.buttons[10]==1' /teleop/joy_vel /navigation/cmd_vel 'True' /navigation/cmd_vel">
+  <node pkg="jsk_robot_startup" type="mux_selector.py" machine="$(arg machine)"
+        name="vel_type_selector" respawn="true"
+        output="screen"
+        args="/joy 'm.buttons[10]==1' /teleop/joy_vel /navigation/cmd_vel 'True' /navigation/cmd_vel">
     <remap from="mux" to="vel_type_mux" />
     <param name="default_select" value="/input_vel"/>
+    <param name="wait" value="true" />
   </node>
 
   <node pkg="safe_teleop_base" type="safe_teleop_base" respawn="true"
-        name="safe_teleop_base" machine="c2" clear_params="true">
+        name="safe_teleop_base" machine="$(arg machine)" clear_params="true">
     <remap from="/odom" to="/base_odometry/odom"/>
     <remap from="base_velocity" to="/navigation/unsafe_vel"/>
     <remap from="~safe_vel" to="/navigation/safe_vel"/>
@@ -41,15 +44,16 @@
   </node>
 
   <!-- switch base velocity, safe or not -->
-  <node pkg="topic_tools" type="mux" name="cmd_vel_mux" respawn="true" machine="c2"
+  <node pkg="topic_tools" type="mux" name="cmd_vel_mux" respawn="true" machine="$(arg machine)"
 	args="base_controller/command_unchecked /navigation/unsafe_vel /navigation/safe_vel">
     <remap from="mux" to="cmd_vel_mux" />
   </node>
-  <node pkg="jsk_robot_startup" type="mux_selector.py" machine="c2"
-	name="cmd_vel_selector" respawn="true" output="screen"
-	args="/joy 'm.buttons[9]==0 and m.buttons[10]==1' /navigation/safe_vel /input_vel 'True' /navigation/safe_vel">
+  <node pkg="jsk_robot_startup" type="mux_selector.py" machine="$(arg machine)"
+        name="cmd_vel_selector" respawn="true" output="screen"
+        args="/joy 'm.buttons[9]==0 and m.buttons[10]==1' /navigation/safe_vel /input_vel 'True' /navigation/safe_vel">
     <remap from="mux" to="cmd_vel_mux" />
     <param name="default_select" value="/navigation/unsafe_vel"/>
+    <param name="wait" value="true" />
   </node>
 
   <!-- check cable and filter baser_controller/command -->

@@ -2,13 +2,13 @@
   <arg name="load_driver" default="true" doc="launch driver set to false on gazebo"/>
   <arg name="respawn" default="true" />
   <arg name="use_c2" default="true" doc="Launch nodes for registration on C2"/>
-  <arg name="deprecated_relay" default="true" doc="advertise to deprecated kinect_head_c2 ns"/>
+  <arg name="deprecated_relay" default="false" doc="advertise to deprecated kinect_head_c2 ns"/>
   <arg name="camera" default="kinect_head" />
   <arg name="num_worker_threads" default="8" />
   <arg name="monitor_driver" default="false" />
-  <arg name="throttle_rgb" default="true" />
-  <arg name="throttle_depth" default="true" />
-  <arg name="throttle_cloud" default="true" />
+  <arg name="throttle_rgb" default="false" />
+  <arg name="throttle_depth" default="false" />
+  <arg name="throttle_cloud" default="false" />
   <arg name="throttle_rate" default="5.0" />
 
   <arg unless="$(arg use_c2)" name="manager" default="kinect_head_nodelet_manager" />
