@@ -1,3 +1,4 @@
 <launch>
-  <machine name="c3" address="10.68.0.3" env-loader="/home/applications/env-hydro.sh"/>
+  <machine name="c3" address="133.11.216.206" env-loader="/home/nvidia/env.sh"
+           user="nvidia" timeout="10" />
 </launch>
